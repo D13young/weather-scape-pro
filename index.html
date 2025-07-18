@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherScape Pro | Погодное приложение</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+
+<div class="theme-switcher">
+    <button id="theme-toggle">
+        <i class="fas fa-moon"></i>
+    </button>
+</div>
+
+<section class="top-banner">
+    <div class="container">
+        <h1 class="heading"><i class="fas fa-cloud-sun"></i> WeatherScape Pro</h1>
+        <form id="weather-form">
+            <div class="search-container">
+                <label>
+                    <input type="text" id="city-input" placeholder="Введите город" autofocus>
+                    <div id="autocomplete-container"></div>
+                </label>
+                <button type="submit"><i class="fas fa-search"></i> ПОИСК</button>
+                <button type="button" id="location-btn" title="Определить местоположение">
+                    <i class="fas fa-location-crosshairs"></i>
+                </button>
+            </div>
+        </form>
+        <span class="msg">Введите название города</span>
+    </div>
+</section>
+
+<section class="ajax-section">
+    <div class="container">
+        <div class="current-weather">
+            <div class="weather-card">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка данных...</p>
+                </div>
+                <div class="weather-content">
+                    <div class="weather-header">
+                        <h2 class="city-name">
+                            <span class="name">Москва</span>
+                            <sup class="country">RU</sup>
+                        </h2>
+                        <button id="unit-toggle" title="Переключить единицы">
+                            °C / °F
+                        </button>
+                    </div>
+                    <div class="weather-main">
+                        <div class="temp-container">
+                            <div class="city-temp">24<sup>°C</sup></div>
+                            <div class="description">Солнечно</div>
+                        </div>
+                        <img class="city-icon" src="https://openweathermap.org/img/wn/01d@2x.png" alt="Погодные условия">
+                    </div>
+
+                    <div class="weather-details">
+                        <div class="detail">
+                            <i class="fas fa-temperature-low"></i>
+                            <span class="feels-like">Ощущается: 26°C</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-tint"></i>
+                            <span class="humidity">Влажность: 45%</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-wind"></i>
+                            <span class="wind">Ветер: 3 м/с</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-sun"></i>
+                            <span class="sunrise">Восход: 05:30</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-moon"></i>
+                            <span class="sunset">Закат: 20:45</span>
+                        </div>
+                        <div class="detail">
+                            <i class="fas fa-gauge-high"></i>
+                            <span class="pressure">Давление: 1013 гПа</span>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="daily">Прогноз на 7 дней</button>
+            <button class="tab" data-tab="hourly">Почасовой прогноз</button>
+        </div>
+
+        <div class="tab-content">
+            <div class="forecast" id="daily-forecast">
+            </div>
+
+            <div class="hourly-forecast-container" id="hourly-forecast">
+                <div class="hourly-scroll">
+                </div>
+                <div class="scroll-controls">
+                    <button class="scroll-btn left"><i class="fas fa-chevron-left"></i></button>
+                    <button class="scroll-btn right"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="page-footer">
+    <div class="container">
+        <p>Данные о погоде предоставлены <a href="https://open-meteo.com" target="_blank">Open-Meteo</a></p>
+        <p>Геокодирование: © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a></p>
+    </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
