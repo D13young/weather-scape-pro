@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // DOM элементы
     const form = document.getElementById('weather-form');
     const input = document.getElementById('city-input');
     const msg = document.querySelector('.msg');
@@ -13,7 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabs = document.querySelectorAll('.tab');
     const hourlyScroll = document.querySelector('.hourly-scroll');
     const scrollButtons = document.querySelectorAll('.scroll-btn');
+    const themeTooltip = document.querySelector('.theme-tooltip');
 
+    // Элементы для отображения данных
     const cityNameElement = document.querySelector('.city-name .name');
     const countryElement = document.querySelector('.city-name .country');
     const tempElement = document.querySelector('.city-temp');
@@ -26,20 +29,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const sunsetElement = document.querySelector('.sunset');
     const pressureElement = document.querySelector('.pressure');
 
+    // Состояние приложения
     const state = {
         unit: 'celsius',
-        theme: 'light',
+        theme: 'default', // default, light, dark
         currentCity: '',
         weatherData: null,
         particles: [],
         autocompleteTimeout: null
     };
 
+    // Инициализация
     function init() {
         loadSettings();
         setupCanvas();
         setupEventListeners();
 
+        // Загружаем погоду по умолчанию или из сохранения
         if (state.currentCity) {
             fetchAndDisplayWeather(state.currentCity);
         } else {
@@ -47,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Загрузка настроек из localStorage
     function loadSettings() {
         const savedUnit = localStorage.getItem('weatherUnit');
         const savedTheme = localStorage.getItem('theme');
@@ -55,23 +62,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedUnit) state.unit = savedUnit;
         if (savedTheme) {
             state.theme = savedTheme;
-            document.body.classList.toggle('dark-theme', savedTheme === 'dark');
-            updateThemeIcon();
+            applyTheme();
         }
         if (savedCity) state.currentCity = savedCity;
 
+        // Обновляем UI
         unitToggle.textContent = state.unit === 'celsius' ? '°C / °F' : '°F / °C';
     }
 
+    // Сохранение настроек
     function saveSettings() {
         localStorage.setItem('weatherUnit', state.unit);
         localStorage.setItem('theme', state.theme);
         localStorage.setItem('lastCity', state.currentCity);
     }
 
+    // Применение текущей темы
+    function applyTheme() {
+        // Удаляем все классы тем
+        document.body.classList.remove('light-mode', 'dark-mode');
+
+        // Применяем выбранную тему
+        if (state.theme === 'light') {
+            document.body.classList.add('light-mode');
+        } else if (state.theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        updateThemeIcon();
+    }
+
+    // Настройка обработчиков событий
     function setupEventListeners() {
+        // Переключение темы
         themeToggle.addEventListener('click', toggleTheme);
 
+        // Отправка формы
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const city = input.value.trim();
@@ -82,8 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetchAndDisplayWeather(city);
         });
 
+        // Автодополнение
         input.addEventListener('input', handleAutocomplete);
 
+        // Клик по автодополнению
         autocompleteContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('autocomplete-item')) {
                 input.value = e.target.dataset.city;
@@ -92,10 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Определение местоположения
         locationBtn.addEventListener('click', getLocation);
 
+        // Переключение единиц измерения
         unitToggle.addEventListener('click', toggleUnits);
 
+        // Переключение вкладок
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 tabs.forEach(t => t.classList.remove('active'));
@@ -114,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Прокрутка почасового прогноза
         scrollButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const scrollAmount = 300;
@@ -125,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Показать сообщение
     function showMessage(text, type = 'info') {
         msg.textContent = text;
         msg.className = 'msg ' + type;
@@ -135,21 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
+    // Показать загрузку
     function showLoading() {
         document.querySelector('.loading').style.display = 'flex';
         document.querySelector('.weather-content').style.display = 'none';
     }
 
+    // Скрыть загрузку
     function hideLoading() {
         document.querySelector('.loading').style.display = 'none';
         document.querySelector('.weather-content').style.display = 'block';
     }
 
+    // Настройка Canvas для частиц
     function setupCanvas() {
         particleCanvas.width = window.innerWidth;
         particleCanvas.height = window.innerHeight;
         const ctx = particleCanvas.getContext('2d');
 
+        // Создание частиц
         function createParticles(type) {
             state.particles = [];
             let count, size, speed;
@@ -199,12 +236,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     size: Math.random() * (size.max - size.min) + size.min,
                     speed: Math.random() * (speed.max - speed.min) + speed.min,
                     type: type,
-                    opacity: type === 'stars' || type === 'sun' ? 
+                    opacity: type === 'stars' || type === 'sun' ?
                         Math.random() * 0.5 + 0.5 : 1
                 });
             }
         }
 
+        // Отрисовка частиц
         function drawParticles() {
             ctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
 
@@ -214,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (p.type === 'rain' || p.type === 'heavy-rain') {
                     ctx.fillStyle = `rgba(135, 206, 235, ${p.opacity})`;
                     ctx.fillRect(p.x, p.y, 1, p.size * (p.type === 'heavy-rain' ? 8 : 5));
-                } 
+                }
                 else if (p.type === 'snow') {
                     ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -232,14 +270,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 else if (p.type === 'stars' || p.type === 'sun') {
-                    ctx.fillStyle = p.type === 'sun' ? 
+                    ctx.fillStyle = p.type === 'sun' ?
                         `rgba(255, 215, 0, ${p.opacity})` :
                         `rgba(255, 255, 255, ${p.opacity})`;
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                if (p.type === 'rain' || p.type === 'heavy-rain' || 
+                if (p.type === 'rain' || p.type === 'heavy-rain' ||
                     p.type === 'snow' || p.type === 'fog') {
                     p.y += p.speed;
                     if (p.y > particleCanvas.height) {
@@ -253,45 +291,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function updateBackground(weatherType, weatherCode) {
-    document.body.classList.remove(
-        'sunny-bg', 'rainy-bg', 'cloudy-bg', 'night-bg', 'storm-bg',
-        'overcast-bg', 'snowy-bg'
-    );
-    
-    switch(weatherType) {
-        case 'sunny':
-            document.body.classList.add('sunny-bg');
-            createParticles('sun');
-            break;
-        case 'rainy':
-            document.body.classList.add('rainy-bg');
-            createParticles(weatherCode >= 80 ? 'heavy-rain' : 'rain');
-            break;
-        case 'cloudy':
-            document.body.classList.add('cloudy-bg');
-            createParticles(weatherCode === 45 || weatherCode === 48 ? 'fog': 'cloudy');
-            break;
-        case 'night':
-            document.body.classList.add('night-bg');
-            createParticles('stars');
-            break;
-        case 'storm':
-            document.body.classList.add('storm-bg');
-            createParticles('thunder');
-            break;
-        case 'overcast':
-            document.body.classList.add('overcast-bg');
-            createParticles('fog');
-            break;
-        case 'snowy':
-            document.body.classList.add('snowy-bg');
-            createParticles('snow');
-            break;
-        default:
-            document.body.classList.add('sunny-bg');
-            createParticles('sun');
-    }
-}
+            // Если выбран не режим по умолчанию, не применяем погодный фон
+            if (state.theme !== 'default') return;
+
+            document.body.classList.remove(
+                'sunny-bg', 'rainy-bg', 'cloudy-bg', 'night-bg', 'storm-bg',
+                'overcast-bg', 'snowy-bg'
+            );
+
+            switch(weatherType) {
+                case 'sunny':
+                    document.body.classList.add('sunny-bg');
+                    createParticles('sun');
+                    break;
+                case 'rainy':
+                    document.body.classList.add('rainy-bg');
+                    createParticles(weatherCode >= 80 ? 'heavy-rain' : 'rain');
+                    break;
+                case 'cloudy':
+                    document.body.classList.add('cloudy-bg');
+                    createParticles(weatherCode === 45 || weatherCode === 48 ? 'fog': 'cloudy');
+                    break;
+                case 'night':
+                    document.body.classList.add('night-bg');
+                    createParticles('stars');
+                    break;
+                case 'storm':
+                    document.body.classList.add('storm-bg');
+                    createParticles('thunder');
+                    break;
+                case 'overcast':
+                    document.body.classList.add('overcast-bg');
+                    createParticles('fog');
+                    break;
+                case 'snowy':
+                    document.body.classList.add('snowy-bg');
+                    createParticles('snow');
+                    break;
+                default:
+                    document.body.classList.add('sunny-bg');
+                    createParticles('sun');
+            }
+        }
 
         window.createParticles = createParticles;
         window.updateBackground = updateBackground;
@@ -305,20 +346,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Переключение темы
     function toggleTheme() {
-        document.body.classList.toggle('dark-theme');
-        state.theme = state.theme === 'light' ? 'dark' : 'light';
+        // Циклическое переключение между режимами
+        if (state.theme === 'default') {
+            state.theme = 'light';
+        } else if (state.theme === 'light') {
+            state.theme = 'dark';
+        } else {
+            state.theme = 'default';
+        }
 
-        updateThemeIcon();
+        applyTheme();
         saveSettings();
+
+        // Обновляем погодный фон только в режиме по умолчанию
+        if (state.theme === 'default' && state.weatherData) {
+            const weatherCode = state.weatherData.weather.current.weather_code;
+            const weatherType = getWeatherType(weatherCode);
+            window.updateBackground(weatherType, weatherCode);
+        } else {
+            // Очищаем частицы в других режимах
+            state.particles = [];
+        }
     }
 
+    // Обновление иконки темы
     function updateThemeIcon() {
         const icon = themeToggle.querySelector('i');
-        icon.classList.toggle('fa-moon', state.theme === 'light');
-        icon.classList.toggle('fa-sun', state.theme === 'dark');
+        icon.className = 'fas ';
+
+        // Обновляем подсказку
+        let tooltipText = '';
+
+        if (state.theme === 'default') {
+            icon.classList.add('fa-cloud-sun');
+            tooltipText = 'Режим фона: Погода';
+        } else if (state.theme === 'light') {
+            icon.classList.add('fa-sun');
+            tooltipText = 'Режим фона: Светлый';
+        } else {
+            icon.classList.add('fa-moon');
+            tooltipText = 'Режим фона: Тёмный';
+        }
+
+        themeTooltip.textContent = tooltipText;
     }
 
+    // Переключение единиц измерения
     function toggleUnits() {
         state.unit = state.unit === 'celsius' ? 'fahrenheit' : 'celsius';
         unitToggle.textContent = state.unit === 'celsius' ? '°C / °F' : '°F / °C';
@@ -334,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
     }
 
+    // Автодополнение городов
     function handleAutocomplete() {
         const query = input.value.trim();
         if (query.length < 2) {
@@ -382,6 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     }
 
+    // Определение местоположения
     function getLocation() {
         if (!navigator.geolocation) {
             showMessage('Геолокация не поддерживается вашим браузером', 'error');
@@ -451,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
+    // Генерация рекомендаций
     function generateRecommendations(weatherData) {
         const current = weatherData.current;
         const recommendations = [];
@@ -541,6 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Генерация прогноза
     function generateForecast(weatherData) {
         forecastContainer.innerHTML = '';
 
@@ -585,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Генерация почасового прогноза
     function generateHourlyForecast(weatherData) {
         const hourlyContainer = document.querySelector('.hourly-scroll');
         hourlyContainer.innerHTML = '';
@@ -628,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Получить иконку погоды по коду
     function getWeatherIcon(code, isDay = true) {
         const baseUrl = "https://openweathermap.org/img/wn/";
         const time = isDay ? 'd' : 'n';
@@ -666,6 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${baseUrl}${iconMap[code] || `02${time}`}@2x.png`;
     }
 
+    // Получить описание погоды по коду
     function getWeatherDescription(code) {
         const descriptions = {
             0: 'Ясно',
@@ -701,6 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return descriptions[code] || 'Неизвестные условия';
     }
 
+    // Получить погоду
     async function getWeather(latitude, longitude) {
         try {
             const response = await fetch(
@@ -718,6 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Получить координаты города
     async function getCityCoordinates(cityName) {
         try {
             const response = await fetch(
@@ -746,13 +830,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Основная функция для получения и отображения погоды
     async function fetchAndDisplayWeather(cityName) {
         try {
             showLoading();
             showMessage('Получение данных...', 'info');
 
             const city = await getCityCoordinates(cityName);
-
             const weatherData = await getWeather(city.latitude, city.longitude);
 
             state.weatherData = {
@@ -766,9 +850,12 @@ document.addEventListener('DOMContentLoaded', () => {
             generateForecast(weatherData);
             generateRecommendations(weatherData);
 
-            const weatherCode = weatherData.current.weather_code;
-            const weatherType = getWeatherType(weatherCode);
-            window.updateBackground(weatherType, weatherCode);
+            // Обновляем фон только в режиме по умолчанию
+            if (state.theme === 'default') {
+                const weatherCode = weatherData.current.weather_code;
+                const weatherType = getWeatherType(weatherCode);
+                window.updateBackground(weatherType, weatherCode);
+            }
 
             showMessage('Данные успешно получены!', 'success');
         } catch (error) {
@@ -779,28 +866,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Определить тип погоды для фона
     function getWeatherType(code) {
-    const hour = new Date().getHours();
-    const isNight = hour < 6 || hour > 20;
+        const hour = new Date().getHours();
+        const isNight = hour < 6 || hour > 20;
 
-    if (code >= 95 && code <= 99) return 'storm'; // Гроза
+        if (code >= 95 && code <= 99) return 'storm';
 
-    if (code >= 71 && code <= 77) return 'snowy'; // Снег
-    if (code >= 85 && code <= 86) return 'snowy'; // Снегопад
+        if (code >= 71 && code <= 77) return 'snowy';
+        if (code >= 85 && code <= 86) return 'snowy';
 
-    if (code >= 51 && code <= 67) return 'rainy'; // Морось/дождь
-    if (code >= 80 && code <= 82) return 'rainy'; // Ливни
+        if (code >= 51 && code <= 67) return 'rainy';
+        if (code >= 80 && code <= 82) return 'rainy';
 
-    if (code === 3) return 'overcast'; // Пасмурно
+        if (isNight) return 'night';
 
-    if (isNight) return 'night';
+        if (code === 3) return 'overcast';
 
-    if (code === 1 || code === 2) return 'cloudy'; // Облачно
-    if (code === 45 || code === 48) return 'cloudy'; // Туман/иней
+        if (code === 1 || code === 2) return 'cloudy';
+        if (code === 45 || code === 48) return 'cloudy';
 
-    return 'sunny';
-}
+        return 'sunny';
+    }
 
+    // Отобразить текущую погоду
     function renderCurrentWeather(city, weatherData) {
         const current = weatherData.current;
 
@@ -847,5 +936,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Запускаем приложение
     init();
 });
