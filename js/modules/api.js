@@ -1,6 +1,6 @@
 import { getState, updateState, saveSettings } from './state.js';
 import { showMessage, renderCurrentWeather, generateForecast, generateHourlyForecast, generateRecommendations } from './ui.js';
-import { updateBackground, getWeatherType } from './particles.js';
+import { updateBackground, isNightTime } from './particles.js';
 
 export async function fetchAndDisplayWeather(cityName) {
     try {
@@ -21,9 +21,7 @@ export async function fetchAndDisplayWeather(cityName) {
         generateRecommendations(weatherData);
 
         if (getState().theme === 'default') {
-            const weatherCode = weatherData.current.weather_code;
-            const weatherType = getWeatherType(weatherCode);
-            updateBackground(weatherType, weatherCode);
+            updateBackground(weatherData.current.weather_code, isNightTime());
         }
 
         showMessage('Данные успешно получены!', 'success');

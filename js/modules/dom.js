@@ -1,11 +1,18 @@
 import { getState, updateState, saveSettings } from './state.js';
 import { fetchAndDisplayWeather, getLocationWeather } from './api.js';
-import { createParticles, updateBackground } from './particles.js';
-import { showMessage, renderCurrentWeather, generateForecast, generateHourlyForecast, generateRecommendations } from './ui.js';
+import { createParticles, updateBackground, resizeCanvas, isNightTime } from './particles.js';
+import {
+    showMessage,
+    renderCurrentWeather,
+    generateForecast,
+    generateHourlyForecast,
+    generateRecommendations
+} from './ui.js';
 
 export function initApp() {
     setupCanvas();
     setupEventListeners();
+    setupResizeHandler();
 
     const { currentCity } = getState();
     fetchAndDisplayWeather(currentCity || 'Москва');
@@ -13,15 +20,8 @@ export function initApp() {
 
 function setupCanvas() {
     const particleCanvas = document.getElementById('particle-canvas');
-    particleCanvas.style.webkitTransform = 'translateZ(0)';
-    particleCanvas.style.transform = 'translateZ(0)';
     particleCanvas.width = window.innerWidth;
     particleCanvas.height = window.innerHeight;
-
-    window.addEventListener('resize', () => {
-        particleCanvas.width = window.innerWidth;
-        particleCanvas.height = window.innerHeight;
-    });
 }
 
 function setupEventListeners() {
@@ -31,12 +31,11 @@ function setupEventListeners() {
     const locationBtn = document.getElementById('location-btn');
     const unitToggle = document.getElementById('unit-toggle');
     const tabs = document.querySelectorAll('.tab');
-    const hourlyScroll = document.querySelector('.hourly-scroll');
     const scrollButtons = document.querySelectorAll('.scroll-btn');
 
-    themeToggle.addEventListener('click', toggleTheme);
     form.addEventListener('submit', handleFormSubmit);
     input.addEventListener('input', handleAutocomplete);
+    themeToggle.addEventListener('click', toggleTheme);
     locationBtn.addEventListener('click', getLocationWeather);
     unitToggle.addEventListener('click', toggleUnits);
 
@@ -46,6 +45,15 @@ function setupEventListeners() {
 
     scrollButtons.forEach(btn => {
         btn.addEventListener('click', () => handleScroll(btn));
+    });
+
+    document.getElementById('autocomplete-container').addEventListener('click', (e) => {
+        if (e.target.classList.contains('autocomplete-item')) {
+            const cityName = e.target.dataset.city;
+            document.getElementById('city-input').value = cityName;
+            document.getElementById('autocomplete-container').style.display = 'none';
+            fetchAndDisplayWeather(cityName);
+        }
     });
 }
 
@@ -62,8 +70,10 @@ async function handleFormSubmit(e) {
 function handleAutocomplete() {
     const input = document.getElementById('city-input');
     const query = input.value.trim();
+    const container = document.getElementById('autocomplete-container');
+
     if (query.length < 2) {
-        document.getElementById('autocomplete-container').style.display = 'none';
+        container.style.display = 'none';
         return;
     }
 
@@ -76,34 +86,24 @@ function handleAutocomplete() {
                     `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=ru&format=json`
                 );
 
-                if (!response.ok) throw new Error('Ошибка получения данных');
-
                 const data = await response.json();
-                const autocompleteContainer = document.getElementById('autocomplete-container');
+                container.innerHTML = '';
 
-                if (!data.results || data.results.length === 0) {
-                    autocompleteContainer.style.display = 'none';
-                    return;
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(city => {
+                        const item = document.createElement('div');
+                        item.className = 'autocomplete-item';
+                        item.textContent = `${city.name}, ${city.admin1 || city.country}`;
+                        item.dataset.city = city.name;
+                        container.appendChild(item);
+                    });
+                    container.style.display = 'block';
+                } else {
+                    container.style.display = 'none';
                 }
-
-                autocompleteContainer.innerHTML = '';
-                data.results.forEach(city => {
-                    const item = document.createElement('div');
-                    item.className = 'autocomplete-item';
-                    item.textContent = `${city.name}, ${city.admin1 || city.country}`;
-                    item.dataset.city = city.name;
-
-                    const country = document.createElement('span');
-                    country.className = 'country';
-                    country.textContent = city.country_code;
-                    item.appendChild(country);
-
-                    autocompleteContainer.appendChild(item);
-                });
-
-                autocompleteContainer.style.display = 'block';
             } catch (error) {
                 console.error('Ошибка автодополнения:', error);
+                container.style.display = 'none';
             }
         }, 300)
     });
@@ -123,10 +123,8 @@ function toggleTheme() {
 
     if (newTheme === 'default' && state.weatherData) {
         const weatherCode = state.weatherData.weather.current.weather_code;
-        const weatherType = getWeatherType(weatherCode);
-        updateBackground(weatherType, weatherCode);
-    } else {
-        updateState({ particles: [] });
+        const isNight = isNightTime();
+        updateBackground(weatherCode, isNight);
     }
 }
 
@@ -202,4 +200,20 @@ function updateThemeIcon() {
         icon.classList.add('fa-moon');
         themeTooltip.textContent = 'Режим фона: Тёмный';
     }
+}
+
+function setupResizeHandler() {
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            resizeCanvas();
+            const state = getState();
+            if (state.weatherData && state.theme === 'default') {
+                const weatherCode = state.weatherData.weather.current.weather_code;
+                const isNight = isNightTime();
+                updateBackground(weatherCode, isNight);
+            }
+        }, 200);
+    });
 }
